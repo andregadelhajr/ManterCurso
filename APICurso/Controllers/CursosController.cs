@@ -45,15 +45,21 @@ namespace APICurso.Controllers
         [HttpPut("{id}")]
         public async Task<IActionResult> PutCurso(int id, Curso curso)
         {
+
             if (id != curso.CursoId)
             {
                 return BadRequest();
             }
 
-            _context.Entry(curso).State = EntityState.Modified;
+            _context.Cursos.Update(curso);
 
             try
             {
+                await _context.SaveChangesAsync();
+
+                var log = await _context.Logs.FindAsync(curso.CursoId);
+                log.DtAtualizacao = DateTime.Now;
+                _context.Logs.Update(log);
                 await _context.SaveChangesAsync();
             }
             catch (DbUpdateConcurrencyException)
@@ -75,20 +81,34 @@ namespace APICurso.Controllers
         [HttpPost]
         public async Task<ActionResult<Curso>> PostCurso(Curso curso)
         {
-            _context.Cursos.Add(curso);
-            await _context.SaveChangesAsync();
+            Boolean AgendaCheia = (_context.Cursos.Any(c => c.DtInicial <= curso.DtFinal && c.DtFinal >= curso.DtInicial || c.DtInicial == curso.DtInicial && c.DtFinal == curso.DtFinal));
 
-            var log = new Log() 
+            if (AgendaCheia)
             {
-                CursoId = curso.CursoId,
-                DtInclusao = DateTime.Now,
-                Usuario = "Admin"
-            };
+                return BadRequest(new { mensagem = "Existe(m) curso(s) planejados(s) dentro do período informado."});
+            }else if (DateTime.Now > curso.DtInicial && DateTime.Now > curso.DtFinal) 
+            {
+                return BadRequest(new { mensagem = "Data Inicial menor que a data Atual."});
+            }else if (curso.DtFinal < curso.DtInicial) 
+            {
+                return BadRequest(new { mensagem = "Data Final menor que a data Inicial."});
+            } else
+            {
+                 _context.Cursos.Add(curso);
+                await _context.SaveChangesAsync();
 
-            _context.Logs.Add(log);
-            await _context.SaveChangesAsync();
+                var log = new Log() 
+                {
+                    CursoId = curso.CursoId,
+                    DtInclusao = DateTime.Now,
+                    Usuario = "Admin"
+                };
 
-            return CreatedAtAction("GetCurso", new { id = curso.CursoId }, curso);
+                _context.Logs.Add(log);
+                await _context.SaveChangesAsync();
+
+                return CreatedAtAction("GetCurso", new { id = curso.CursoId }, curso);
+            }
         }
 
         // DELETE: api/Cursos/5
@@ -96,12 +116,23 @@ namespace APICurso.Controllers
         public async Task<IActionResult> DeleteCurso(int id)
         {
             var curso = await _context.Cursos.FindAsync(id);
-            if (curso == null)
+            // if (curso == null)
+            // {
+            //     return NotFound();
+            // }
+
+            if (id != curso.CursoId)
             {
-                return NotFound();
+                return BadRequest();
             }
 
-            _context.Cursos.Remove(curso);
+            curso.Status = false;
+            _context.Cursos.Update(curso);
+            await _context.SaveChangesAsync();
+
+            var log = await _context.Logs.FindAsync(curso.CursoId);
+            log.DtAtualizacao = DateTime.Now;
+            _context.Logs.Update(log);
             await _context.SaveChangesAsync();
 
             return NoContent();
