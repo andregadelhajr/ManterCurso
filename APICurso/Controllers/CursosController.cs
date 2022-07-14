@@ -81,18 +81,28 @@ namespace APICurso.Controllers
         [HttpPost]
         public async Task<ActionResult<Curso>> PostCurso(Curso curso)
         {
+
             Boolean AgendaCheia = (_context.Cursos.Any(c => c.DtInicial <= curso.DtFinal && c.DtFinal >= curso.DtInicial || c.DtInicial == curso.DtInicial && c.DtFinal == curso.DtFinal));
+
+            Boolean NomeIgual = (_context.Cursos.Any(c => c.Descricao == curso.Descricao && c.Status == true));
 
             if (AgendaCheia)
             {
-                return BadRequest(new { mensagem = "Existe(m) curso(s) planejados(s) dentro do período informado."});
+                return new BadRequestObjectResult(new {Errors = new[] {"Existe(m) curso(s) planejados(s) dentro do período informado."}});
+
             }else if (DateTime.Now > curso.DtInicial && DateTime.Now > curso.DtFinal) 
             {
-                return BadRequest(new { mensagem = "Data Inicial menor que a data Atual."});
+                return new BadRequestObjectResult(new {Errors = new[] {"Data Inicial menor que a data Atual."}});
+
             }else if (curso.DtFinal < curso.DtInicial) 
             {
-                return BadRequest(new { mensagem = "Data Final menor que a data Inicial."});
-            } else
+                return new BadRequestObjectResult(new {Errors = new[] {"Data Final menor que a data Inicial."}});
+
+            }else if (NomeIgual)
+            {
+                return new BadRequestObjectResult(new {Errors = new[] {"Já existe um curso com este nome cadastrado."}});
+            }
+            else 
             {
                  _context.Cursos.Add(curso);
                 await _context.SaveChangesAsync();
@@ -116,24 +126,30 @@ namespace APICurso.Controllers
         public async Task<IActionResult> DeleteCurso(int id)
         {
             var curso = await _context.Cursos.FindAsync(id);
-            // if (curso == null)
-            // {
-            //     return NotFound();
-            // }
 
             if (id != curso.CursoId)
             {
                 return BadRequest();
+            } 
+            // else if ((curso.DtFinal > DateTime.Now && DateTime.Now > curso.DtInicial) || DateTime.Now > curso.DtFinal)
+            // {
+            //     return BadRequest(error:"Curso já finalizado.");
+            // }
+            else if (curso.Status == false)
+            {
+                return BadRequest(error:"Curso já finalizado.");
             }
+            else
+            {
+                curso.Status = false;
+                _context.Cursos.Update(curso);
+                await _context.SaveChangesAsync();
 
-            curso.Status = false;
-            _context.Cursos.Update(curso);
-            await _context.SaveChangesAsync();
-
-            var log = await _context.Logs.FindAsync(curso.CursoId);
-            log.DtAtualizacao = DateTime.Now;
-            _context.Logs.Update(log);
-            await _context.SaveChangesAsync();
+                var log = await _context.Logs.FindAsync(curso.CursoId);
+                log.DtAtualizacao = DateTime.Now;
+                _context.Logs.Update(log);
+                await _context.SaveChangesAsync();
+            }
 
             return NoContent();
         }
@@ -141,6 +157,18 @@ namespace APICurso.Controllers
         private bool CursoExists(int id)
         {
             return _context.Cursos.Any(e => e.CursoId == id);
+        }
+
+        [HttpGet("ativos/")]
+        public async Task<ActionResult<IEnumerable<Curso>>> GetCursosAtivos()
+        {
+            return await _context.Cursos.Where(c => c.Status == true).ToListAsync();
+        }
+
+        [HttpGet("finalizados/")]
+        public async Task<ActionResult<IEnumerable<Curso>>> GetCursosFinalizados()
+        {
+            return await _context.Cursos.Where(c => c.Status == false).ToListAsync();
         }
     }
 }
