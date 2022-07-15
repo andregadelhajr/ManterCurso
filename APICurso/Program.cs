@@ -4,7 +4,9 @@ using System.Linq;
 using System.Threading.Tasks;
 using APICurso.Data;
 using APICurso.Models;
+using APICurso.Models.Identidade;
 using Microsoft.AspNetCore.Hosting;
+using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
@@ -27,6 +29,11 @@ namespace APICurso
                     var context = services.GetRequiredService<CursoContext>();
                     await context.Database.MigrateAsync();
                     await CategoriaContextDado.SeedAsync(context, loggerFactory);
+
+                    var userManager = services.GetRequiredService<UserManager<Usuario>>();
+                    var identidadeContext = services.GetRequiredService<UsuarioDbContext>();
+                    await identidadeContext.Database.MigrateAsync();
+                    await UsuarioDbContextSeed.SeedUsersAsync(userManager);
                 }
                 catch(Exception ex)
                 {

@@ -162,7 +162,7 @@ namespace APICurso.Controllers
         [HttpGet("ativos/")]
         public async Task<ActionResult<IEnumerable<Curso>>> GetCursosAtivos()
         {
-            return await _context.Cursos.Where(c => c.Status == true).ToListAsync();
+            return await _context.Cursos.Include(x => x.Categoria).Where(c => c.Status == true).ToListAsync();
         }
 
         [HttpGet("finalizados/")]

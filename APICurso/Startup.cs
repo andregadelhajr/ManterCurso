@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
+using APICurso.Extensions;
 using APICurso.Models;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
@@ -32,11 +33,20 @@ namespace APICurso
                 contexto=> contexto.UseSqlServer(Configuration.GetConnectionString("ConexaoBDServer"))
             );
 
+            services.AddDbContext<UsuarioDbContext>(
+                contexto=> contexto.UseSqlServer(Configuration.GetConnectionString("UsuarioConexao"))
+            );
+
+            // services.AddDbContext<UsuarioDbContext>(
+            //     contexto=> contexto.UseSqlite(Configuration.GetConnectionString("UsuarioConexao2"))
+            // );
+
             // services.AddDbContext<CursoContext>(
             //     contexto=> contexto.UseSqlite(Configuration.GetConnectionString("ConexaoBDSlite"))
             // );
 
             services.AddControllers();
+            services.AddIdentidadeServices();
             services.AddSwaggerGen(c =>
             {
                 c.SwaggerDoc("v1", new OpenApiInfo { Title = "APICurso", Version = "v1" });
