@@ -24,7 +24,7 @@ namespace APICurso.Controllers
         [HttpGet]
         public async Task<ActionResult<IEnumerable<Log>>> GetLogs()
         {
-            return await _context.Logs.ToListAsync();
+            return await _context.Logs.Include(x => x.Curso).ToListAsync();
         }
 
         // GET: api/Logs/5

@@ -24,7 +24,7 @@ namespace APICurso.Controllers
         [HttpGet]
         public async Task<ActionResult<IEnumerable<Curso>>> GetCursos()
         {
-            return await _context.Cursos.ToListAsync();
+            return await _context.Cursos.Include(x => x.Categoria).ToListAsync();
         }
 
         // GET: api/Cursos/5
@@ -168,7 +168,7 @@ namespace APICurso.Controllers
         [HttpGet("finalizados/")]
         public async Task<ActionResult<IEnumerable<Curso>>> GetCursosFinalizados()
         {
-            return await _context.Cursos.Where(c => c.Status == false).ToListAsync();
+            return await _context.Cursos.Include(x => x.Categoria).Where(c => c.Status == false).ToListAsync();
         }
     }
 }

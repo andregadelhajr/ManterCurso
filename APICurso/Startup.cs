@@ -46,7 +46,7 @@ namespace APICurso
             // );
 
             services.AddControllers();
-            services.AddIdentidadeServices();
+            services.AddIdentidadeServices(Configuration);
             services.AddSwaggerGen(c =>
             {
                 c.SwaggerDoc("v1", new OpenApiInfo { Title = "APICurso", Version = "v1" });
@@ -67,7 +67,9 @@ namespace APICurso
 
             app.UseRouting();
 
+            app.UseAuthentication();
             app.UseAuthorization();
+
             app.UseCors(x=>x.AllowAnyHeader()
                 .AllowAnyMethod()
                 .AllowAnyOrigin());
